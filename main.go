@@ -22,6 +22,41 @@ func init() {
 	})
 }
 
+// type TunnelConfiguration struct {
+// 	Ingress     []TunnelConfigurationIngress `json:"ingress"`
+// 	WarpRouting struct {
+// 		Enabled bool `json:"enabled"`
+// 	} `json:"warp-routing"`
+// }
+
+// type TunnelConfigurationIngress struct {
+// 	Service       string                                  `json:"service"`
+// 	Hostname      string                                  `json:"hostname,omitempty"`
+// 	OriginRequest TunnelConfigurationIngressOriginRequest `json:"originRequest,omitempty"`
+// }
+
+// type TunnelConfigurationIngressOriginRequest struct {
+// 	HTTPHostHeader string `json:"httpHostHeader"`
+// }
+
+// type TunnelConfigurationDetail struct {
+// 	Config    TunnelConfiguration `json:"config"`
+// 	TunnelID  string              `json:"tunnel_id"`
+// 	Version   int                 `json:"version"`
+// 	CreatedAt time.Time           `json:"created_at"`
+// }
+
+// type TunnelConfigurationUpdateParams struct {
+// 	AccountID string              `json:"-"`
+// 	TunnelID  string              `json:"tunnel_id"`
+// 	Config    TunnelConfiguration `json:"config"`
+// }
+
+// type TunnelConfigurationParams struct {
+// 	AccountID string `json:"-"`
+// 	TunnelID  string `json:"tunnel_id"`
+// }
+
 func main() {
 	cf, err := cloudflare.NewWithAPIToken(os.Getenv("CLOUDFLARE_API_TOKEN"))
 	if err != nil {
@@ -50,7 +85,7 @@ func main() {
 		// update the cache
 		cache = poll.Routers
 
-		ingress := []cloudflare.TunnelConfigurationIngress{}
+		tunnel_cfg := cloudflare.TunnelConfiguration{}
 
 		for _, r := range poll.Routers {
 			// Only enabled routes
@@ -80,23 +115,21 @@ func main() {
 					"service": os.Getenv("TRAEFIK_SERVICE_ENDPOINT"),
 				}).Info("upserting tunnel")
 
-				ingress = append(ingress, cloudflare.TunnelConfigurationIngress{
+				tunnel_cfg.OriginRequest.HTTPHostHeader = &domain
+				tunnel_cfg.Ingress = append(tunnel_cfg.Ingress, cloudflare.UnvalidatedIngressRule{
 					Service:  os.Getenv("TRAEFIK_SERVICE_ENDPOINT"),
 					Hostname: domain,
-					OriginRequest: cloudflare.TunnelConfigurationIngressOriginRequest{
-						HTTPHostHeader: domain,
-					},
 				})
 			}
 
 		}
 
 		// add catch-all rule
-		ingress = append(ingress, cloudflare.TunnelConfigurationIngress{
+		tunnel_cfg.Ingress = append(tunnel_cfg.Ingress, cloudflare.UnvalidatedIngressRule{
 			Service: "http_status:404",
 		})
 
-		err = updateTunnels(ctx, cf, ingress)
+		err = updateTunnels(ctx, cf, tunnel_cfg)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -134,10 +167,10 @@ func pollTraefikRouters(client *resty.Client) (ch chan PollResponse) {
 	return
 }
 
-func updateTunnels(ctx context.Context, cf *cloudflare.API, ingress []cloudflare.TunnelConfigurationIngress) error {
+func updateTunnels(ctx context.Context, cf *cloudflare.API, tunnel_cfg cloudflare.TunnelConfiguration) error {
 
 	// Get Current tunnel config
-	cfg, err := cf.TunnelConfiguration(ctx, cloudflare.TunnelConfigurationParams{
+	cfg, err := cf.UpdateTunnelConfiguration(ctx, cloudflare.TunnelConfigurationParams{
 		AccountID: os.Getenv("CLOUDFLARE_ACCOUNT_ID"),
 		TunnelID:  os.Getenv("CLOUDFLARE_TUNNEL_ID"),
 	})
@@ -146,11 +179,10 @@ func updateTunnels(ctx context.Context, cf *cloudflare.API, ingress []cloudflare
 	}
 
 	// Update config with new ingress rules
-	cfg.Ingress = ingress
-	cfg, err = cf.TunnelConfigurationUpdate(ctx, cloudflare.TunnelConfigurationUpdateParams{
+	cfg, err = cf.UpdateTunnelConfiguration(ctx, cloudflare.TunnelConfigurationParams{
 		AccountID: os.Getenv("CLOUDFLARE_ACCOUNT_ID"),
 		TunnelID:  os.Getenv("CLOUDFLARE_TUNNEL_ID"),
-		Config:    cfg,
+		Config:    tunnel_cfg,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to update tunnel config, %s", err.Error())
@@ -159,7 +191,7 @@ func updateTunnels(ctx context.Context, cf *cloudflare.API, ingress []cloudflare
 	log.Info("tunnel config updated")
 
 	// Update DNS to point to new tunnel
-	for _, i := range ingress {
+	for _, i := range cfg.Config.Ingress {
 		if i.Hostname == "" {
 			continue
 		}

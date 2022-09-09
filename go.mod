@@ -3,7 +3,7 @@ module justmiles/traefik-cloudflare-tunnel
 go 1.17
 
 require (
-	github.com/cloudflare/cloudflare-go v0.39.0
+	github.com/cloudflare/cloudflare-go v0.43.0
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/traefik/traefik/v2 v2.6.6
@@ -37,5 +37,3 @@ replace (
 	github.com/go-check/check => github.com/containous/check v0.0.0-20170915194414-ca0bf163426a
 	github.com/gorilla/mux => github.com/containous/mux v0.0.0-20181024131434-c33f32e26898
 )
-
-replace github.com/cloudflare/cloudflare-go => github.com/justmiles/cloudflare-go v0.39.1-0.20220514220619-ed137f796f9b
