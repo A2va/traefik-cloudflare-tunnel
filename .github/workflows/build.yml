@@ -32,7 +32,7 @@ jobs:
             type=raw,value=latest
             type=raw,value=${{ steps.gen_meta.outputs.sub_sha }}
           flavor: |
-            prefix=traefik-cloudflare-tunnel-,onlatest=true
+            onlatest=true
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
