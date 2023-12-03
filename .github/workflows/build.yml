@@ -16,24 +16,6 @@ jobs:
           echo "**** Setting build date to $BUILD_DATE ****"
           echo ::set-output name=sub_sha::${SHORTHASH}
 
-      - name: Docker meta
-        id: docker_meta
-        uses: docker/metadata-action@v5.2.0
-        with:
-          images: |
-            ghcr.io/A2va/traefik-cloudflare-tunnel
-          labels: |
-            org.opencontainers.image.title=traefik-cloudflare-tunnel
-            org.opencontainers.image.description="https://github.com/justmiles/traefik-cloudflare-tunnel"
-            org.opencontainers.image.vendor=A2va
-            org.opencontainers.image.source="https://github.com/A2va/traefik-cloudflare-tunnel"
-            org.opencontainers.image.version="${{ steps.gen_meta.outputs.sub_sha }}"
-          tags: |
-            type=raw,value=latest
-            type=raw,value=${{ steps.gen_meta.outputs.sub_sha }}
-          flavor: |
-            onlatest=true
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -46,12 +28,10 @@ jobs:
           registry: ghcr.io
           username: A2va
           password: ${{ secrets.GH_TOKEN }}
-
-      - name: Build and push
-        uses: docker/bake-action@v4.1.0
+      - name: Build and push Docker image
+        uses: docker/build-push-action
         with:
-          files: |
-            ./docker-bake.hcl
-            ${{ steps.docker_meta.outputs.bake-file }}
-          targets: all
+          context: .
+          platforms: linux/amd64,linux/arm64
           push: true
+          tags: A2va/traefik-cloudflare-tunnel:latest
