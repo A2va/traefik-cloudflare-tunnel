@@ -6,7 +6,7 @@ group "default" {
 
 target "image" {
   inherits = ["docker-metadata-action"]
-  context = "./traefik-cloudflare-tunnel"
+  context = "."
 }
 
 target "all" {
