@@ -1,9 +1,6 @@
 name: Build traefik-cloudflare-tunnel
 
-on:
-  push:
-    branches:
-      - workflows-test
+on: workflow_dispatch
 
 jobs:
   bake-traefik-cloudflare-tunnel:
