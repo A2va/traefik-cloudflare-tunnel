@@ -48,6 +48,10 @@ jobs:
           registry: ghcr.io
           username: A2va
           password: ${{ secrets.GH_TOKEN }}
+
+      - name: List files
+        run: ls -la
+        
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
