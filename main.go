@@ -83,8 +83,8 @@ func main() {
 					Hostname: domain,
 					Service:  os.Getenv("TRAEFIK_SERVICE_ENDPOINT"),
 					OriginRequest: &cloudflare.OriginRequestConfig{
-						HTTPHostHeader:   &domain,
-						OriginServerName: &domain,
+						HTTPHostHeader: &domain,
+						// OriginServerName: &domain,
 					},
 				})
 			}
