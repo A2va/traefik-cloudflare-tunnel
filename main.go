@@ -59,10 +59,10 @@ func main() {
 			}
 
 			// Skip any routes with TLS configured
-			if r.TLS.CertResolver != "" {
-				// TODO: use better indicator for TLS
-				continue
-			}
+			// if r.TLS.CertResolver != "" {
+			// 	// TODO: use better indicator for TLS
+			// 	continue
+			// }
 
 			// Only use routes with the tunneld entrypoint
 			if !contains(r.EntryPoints, os.Getenv("TRAEFIK_ENTRYPOINT")) {
@@ -83,7 +83,8 @@ func main() {
 					Hostname: domain,
 					Service:  os.Getenv("TRAEFIK_SERVICE_ENDPOINT"),
 					OriginRequest: &cloudflare.OriginRequestConfig{
-						HTTPHostHeader: &domain,
+						HTTPHostHeader:   &domain,
+						OriginServerName: &domain,
 					},
 				})
 			}
